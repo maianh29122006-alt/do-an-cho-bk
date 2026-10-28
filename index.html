@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chợ BK - Sàn giao dịch sinh viên</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load React & Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const App = () => {
+            // Giả lập tài khoản đang đăng nhập
+            const [currentUser, setCurrentUser] = useState({ email: 'sinhvien@hust.edu.vn', role: 'VT01', name: 'Sinh viên A' });
+            
+            // Dữ liệu giả lập thay cho Google Sheets
+            const [products, setProducts] = useState([
+                { id: 1, title: 'Giáo trình Vật lý điện tử', price: 50000, category: 'Giáo trình đại cương', sellerEmail: 'nguyenvanb@hust.edu.vn', sellerName: 'Nguyễn Văn B', status: 'Đang bán', image: 'https://placehold.co/400x300/cf2c28/ffffff?text=Vat+Ly+Dien+Tu' },
+                { id: 2, title: 'Board mạch Arduino Uno R3', price: 100000, category: 'Linh kiện điện tử', sellerEmail: 'sinhvien@hust.edu.vn', sellerName: 'Sinh viên A', status: 'Đang bán', image: 'https://placehold.co/400x300/cf2c28/ffffff?text=Arduino' },
+                { id: 3, title: 'Chuột máy tính Logitech cũ', price: 80000, category: 'Đồ dùng cá nhân', sellerEmail: 'tranthic@hust.edu.vn', sellerName: 'Trần Thị C', status: 'Đang bán', image: 'https://placehold.co/400x300/cf2c28/ffffff?text=Mouse' }
+            ]);
+
+            const [activeCategory, setActiveCategory] = useState('Tất cả');
+
+            // Tính năng thay đổi tài khoản để test phân quyền
+            const toggleUser = (role) => {
+                if (role === 'admin') {
+                    setCurrentUser({ email: 'admin@hust.edu.vn', role: 'VT02', name: 'Quản trị viên' });
+                } else {
+                    setCurrentUser({ email: 'sinhvien@hust.edu.vn', role: 'VT01', name: 'Sinh viên A' });
+                }
+            };
+
+            // Logic Xóa bài đăng (Phân quyền)
+            const handleDelete = (id, sellerEmail) => {
+                // Chỉ chủ bài đăng (người bán) HOẶC Quản trị viên (VT02) mới được xóa
+                if (currentUser.email === sellerEmail || currentUser.role === 'VT02') {
+                    if(confirm('Bạn có chắc chắn muốn xóa bài đăng này?')) {
+                        setProducts(products.filter(p => p.id !== id));
+                    }
+                } else {
+                    alert('Bạn không có quyền xóa bài đăng này!');
+                }
+            };
+
+            const filteredProducts = activeCategory === 'Tất cả' ? products : products.filter(p => p.category === activeCategory);
+
+            return (
+                <div className="min-h-screen pb-10">
+                    {/* Header */}
+                    <header className="bg-[#cf2c28] text-white sticky top-0 z-50 shadow-md">
+                        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <div className="bg-white text-[#cf2c28] p-1.5 rounded font-bold text-xl leading-none">Chợ</div>
+                                <span className="font-bold text-xl tracking-tight">BK</span>
+                            </div>
+                            
+                            {/* Công cụ test quyền giả lập */}
+                            <div className="flex gap-4 items-center">
+                                <div className="text-sm bg-white/20 px-3 py-1 rounded">
+                                    Đang đăng nhập: <b>{currentUser.name}</b>
+                                </div>
+                                <select 
+                                    className="text-black text-sm px-2 py-1 rounded cursor-pointer outline-none"
+                                    onChange={(e) => toggleUser(e.target.value)}
+                                >
+                                    <option value="student">Đóng vai: Sinh viên</option>
+                                    <option value="admin">Đóng vai: Quản trị viên</option>
+                                </select>
+                                <button className="bg-white text-[#cf2c28] px-4 py-2 rounded font-bold text-sm hover:bg-gray-100">
+                                    + Đăng tin
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="max-w-7xl mx-auto px-4 mt-6 flex gap-6">
+                        {/* Sidebar */}
+                        <aside className="w-64 shrink-0 hidden md:block">
+                            <div className="bg-white rounded-lg shadow p-4 sticky top-20">
+                                <h3 className="font-bold text-lg border-b pb-2 mb-3">Danh mục</h3>
+                                <ul className="space-y-2 text-sm text-gray-700">
+                                    {['Tất cả', 'Giáo trình đại cương', 'Linh kiện điện tử', 'Thiết bị viễn thông', 'Đồ dùng cá nhân'].map(cat => (
+                                        <li key={cat} 
+                                            className={`cursor-pointer p-2 rounded ${activeCategory === cat ? 'bg-red-50 text-[#cf2c28] font-bold' : 'hover:bg-gray-50'}`}
+                                            onClick={() => setActiveCategory(cat)}
+                                        >
+                                            {cat}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </aside>
+
+                        {/* Product Grid */}
+                        <div className="flex-1">
+                            <h2 className="text-xl font-bold mb-4">Tin đăng mới nhất</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {filteredProducts.map(product => (
+                                    <div key={product.id} className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden flex flex-col">
+                                        <img src={product.image} alt={product.title} className="w-full h-40 object-cover" />
+                                        <div className="p-4 flex flex-col flex-1">
+                                            <span className="text-xs font-semibold text-gray-500 mb-1">{product.category}</span>
+                                            <h3 className="font-bold text-gray-800 mb-2 line-clamp-2">{product.title}</h3>
+                                            <div className="text-[#cf2c28] font-bold text-lg mb-3">
+                                                {product.price.toLocaleString('vi-VN')} đ
+                                            </div>
+                                            
+                                            <div className="mt-auto pt-3 border-t flex justify-between items-center">
+                                                <span className="text-xs text-gray-500">Đăng bởi: {product.sellerName}</span>
+                                                
+                                                {/* Action Buttons (Phân quyền logic hiển thị) */}
+                                                <div className="flex gap-2">
+                                                    {(currentUser.email === product.sellerEmail || currentUser.role === 'VT02') && (
+                                                        <button 
+                                                            onClick={() => handleDelete(product.id, product.sellerEmail)}
+                                                            className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+                                                        >
+                                                            Xóa
+                                                        </button>
+                                                    )}
+                                                    {currentUser.email !== product.sellerEmail && (
+                                                        <button className="text-xs bg-red-100 text-[#cf2c28] px-3 py-1 rounded font-semibold hover:bg-red-200">
+                                                            Nhắn tin
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
